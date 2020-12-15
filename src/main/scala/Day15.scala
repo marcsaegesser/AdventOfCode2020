@@ -1,6 +1,46 @@
 package advent
 
+// Turns out Vector is much faster than Map.
 object Day15 {
+
+  def run(): Unit = {
+    println(s"Day15.part1 = ${part1(inputData)}")
+    println(s"Day15.part2 = ${part2(inputData)}")
+  }
+
+  def part1(input: String): Int =
+    playN(2020, input)
+
+  def part2(input: String): Int =
+    playN(30000000, input)
+
+  def playN(n: Int, input: String) = {
+    def helper(t: Int, l: Int, s: Vector[Int]): Int =
+      if(t == n)         l
+      else if(s(l) == 0) helper(t+1, 0, s.updated(l, t))
+      else               helper(t+1, t - s(l), s.updated(l, t))
+
+    val (t, l, s) = parseInput(n, input)
+    helper(t, l, s)
+  }
+
+  def parseInput(n: Int, input: String): (Int, Int, Vector[Int]) = {
+    val l =
+      input.split(",")
+        .toList
+        .map(_.toInt)
+        .zip(LazyList.from(1))
+        .reverse
+    (l.size, l.head._1, l.tail.foldLeft(Vector.fill(n)(0)) { case (v, (i, t)) =>  v.updated(i, t)})
+  }
+
+  case class State(turn: Int, last: Int, seen: Vector[Int])
+  val testData = "0,3,6"
+
+  val inputData = "0,3,1,6,7,5"
+}
+
+object Day15a {
 
   def part1(input: State): Int =
     LazyList.iterate(input)(next).dropWhile(_.turn < 2020).head.last
