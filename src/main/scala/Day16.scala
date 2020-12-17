@@ -60,8 +60,6 @@ object Day16 {
 
   case class TicketData(rules: Map[String, List[(Int, Int)]], ticket: List[Int], nearby: List[List[Int]])
 
-  case class FieldRule(name: String, rules: List[(Int, Int)])
-
   val fieldRuleRegex = """(.*): (\d+)-(\d+) or (\d+)-(\d+)""".r
 
   def parseFieldRule(s: String): (String, List[(Int, Int)]) =
