@@ -31,8 +31,8 @@ object Day18 {
     def addArg(expr: Expr): State = this.copy(args=expr :: args)
     def addOp(op: BinaryOp): State = {
       (args, ops) match {
-        case (a2 :: a1 :: as, o1 :: os) if precedence(op) <= precedence(o1) =>
-          State(applyOp(o1, a1, a2) :: as, op :: os, precedence)
+        case (rhs :: lhs :: as, o1 :: os) if precedence(op) <= precedence(o1) =>
+          State(applyOp(o1, lhs, rhs) :: as, op :: os, precedence)
         case (as, os) => this.copy(ops=op :: os)
       }
     }
@@ -42,9 +42,9 @@ object Day18 {
 
     def reduce: Expr =
       (args, ops) match {
-        case (Nil, _) => throw new Exception("Invalid state")
-        case (a1 :: Nil, _) => a1
-        case (a2 :: a1 :: as, op :: os) => State(args=applyOp(op, a1, a2) :: as, ops=os, precedence).reduce
+        // case (Nil, _) => throw new Exception("Invalid state")
+        case (a :: Nil, _) => a
+        case (rhs :: lhs :: as, op :: os) => State(args=applyOp(op, lhs, rhs) :: as, ops=os, precedence).reduce
         case (_, _) => throw new Exception("Invalid state")
       }
 
@@ -54,22 +54,22 @@ object Day18 {
     def empty(precedence: Precedence): State = State(Nil, Nil, precedence)
   }
 
-  def p(tokens: List[Char], state: State): (Expr, List[Char]) = {
-    tokens match {
-      case Nil      => (state.reduce, Nil)
-      case ' ' :: r => p(r, state)
-      case '(' :: r =>
-        val (e, rr) = p(r, State.empty(state.precedence))
-        p(rr, state.addArg(e))
-      case ')' :: r => (state.reduce, r)
-      case '+' :: r => p(r, state.addOp(Plus))
-      case '*' :: r => p(r, state.addOp(Mult))
-      case x   :: r => p(r, state.addArg(Num(x.asDigit.toLong)))
-    }
-  }
-
   def parse(s: String, precedence: Precedence): Expr = {
-    p(s.toList, State.empty(precedence))._1
+    def helper(tokens: List[Char], state: State): (Expr, List[Char]) = {
+      tokens match {
+        case Nil      => (state.reduce, Nil)
+        case ' ' :: r => helper(r, state)
+        case '(' :: r =>
+          val (e, rr) = helper(r, State.empty(state.precedence))
+          helper(rr, state.addArg(e))
+        case ')' :: r => (state.reduce, r)
+        case '+' :: r => helper(r, state.addOp(Plus))
+        case '*' :: r => helper(r, state.addOp(Mult))
+        case x   :: r => helper(r, state.addArg(Num(x.asDigit.toLong)))
+      }
+    }
+
+    helper(s.toList, State.empty(precedence))._1
   }
 
   def eval(expr: Expr): Long =
