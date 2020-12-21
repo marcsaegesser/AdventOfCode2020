@@ -2,6 +2,12 @@ package advent
 
 object Day21 {
 
+  def run(): Unit = {
+    val rules = readFile(inputFile)
+    println(s"Day21.part1 = ${part1(rules)}")
+    println(s"Day21.part2 = ${part2(rules)}")
+  }
+
   type Ingredient = String
   type Allergen = String
 
