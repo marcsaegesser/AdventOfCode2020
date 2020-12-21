@@ -46,23 +46,56 @@ object Day20 {
 
   // @annotation.nowarn
   def processRules(board: Board, tile: Tile, coord: Coord, remaining: Map[Int, Tile], structure: Structure): (Board, Map[Int, Tile]) = {
+    println(s"processRules:  $tile, $coord")
+    val nextBoard = board.updated(coord, tile)
+    val nextRemaining = remaining - tile.id
+
     val rules = structure(tile.id)
-    rules.foldLeft((board, remaining)) { case ((b, r), (n, ll)) =>
+    rules.foldLeft((nextBoard, nextRemaining)) { case ((b, r), (n, ll)) =>
       println(s"$n - $ll")
-      val (d, nextTile) =
-        ll match {
-          case (Some(a), Some(b)) :: (None, None) :: Nil => (a, rotateTile(r(n), b, a.opposite))
-          case (Some(a), None) :: (None, Some(b)) :: Nil => (a, a.flipF(rotateTile(r(n), b, a.opposite)))
-          case _                                         => throw new Exception("invalid structure")
-        }
-      val nextBoard =
-        d match {
-          case Top    => b.updated(coord.up, nextTile)
-          case Right  => b.updated(coord.right, nextTile)
-          case Bottom => b.updated(coord.down, nextTile)
-          case Left   => b.updated(coord.left, nextTile)
-        }
-      (nextBoard, r - n)
+      if(r.contains(n)) {
+        val (d, nextTile) =
+          ll match {
+            case (Some(a), Some(b)) :: (None, None) :: Nil => (a, rotateTile(r(n), b, a.opposite))
+            case (Some(a), None) :: (None, Some(b)) :: Nil => (a, a.flipF(rotateTile(r(n), b, a.opposite)))
+            case _                                         => throw new Exception("invalid structure")
+          }
+        val nextCoord =
+          d match {
+            case Top    => coord.up
+            case Right  => coord.right
+            case Bottom => coord.down
+            case Left   => coord.left
+          }
+        processRules(b, nextTile, nextCoord, r, structure)
+      } else {
+        (b, r)
+      }
+    }
+  }
+
+  def processRulesX(board: Board, tile: Tile, coord: Coord, remaining: Map[Int, Tile], structure: Structure): (Board, Map[Int, Tile]) = {
+    println(s"processRules:  $tile, $coord")
+    if(!remaining.contains(tile.id)) (board, remaining)
+    else {
+      val rules = structure(tile.id)
+      rules.foldLeft((board, remaining)) { case (b, (n, ll)) =>
+        println(s"$n - $ll")
+        val (d, nextTile) =
+          ll match {
+            case (Some(a), Some(b)) :: (None, None) :: Nil => (a, rotateTile(remaining(n), b, a.opposite))
+            case (Some(a), None) :: (None, Some(b)) :: Nil => (a, a.flipF(rotateTile(remaining(n), b, a.opposite)))
+            case _                                         => throw new Exception("invalid structure")
+          }
+        val nextCoord =
+          d match {
+            case Top    => coord.up
+            case Right  => coord.right
+            case Bottom => coord.down
+            case Left   => coord.left
+          }
+        processRules(board.updated(coord, tile), nextTile, nextCoord, remaining - tile.id, structure)
+      }
     }
   }
 
@@ -153,7 +186,7 @@ object Day20 {
     def flipH: Tile = Tile(id, data.map(_.reverse))
     def flipV: Tile = Tile(id, data.reverse)
 
-    override def toString: String = s"Tile $id\n${show}\n"
+    override def toString: String = s"Tile $id\n${show}"
     def show: String = data.map(_.mkString).mkString("\n")
   }
 
